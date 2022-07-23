@@ -1,0 +1,9 @@
+[package]
+name = "munge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wast = "44.0.0"
+wasmprinter = "0.2.37"
+anyhow = "1.0.58"
