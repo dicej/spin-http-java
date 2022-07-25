@@ -27,6 +27,7 @@ First, clone, patch, build, and install TeaVM:
 
 ```
 git clone https://github.com/konsoletyper/teavm
+cd teavm
 git checkout ddddfcf2175b7e8e7a9c24877116954835240fb1
 git apply <<END
 diff --git a/core/src/main/java/org/teavm/backend/wasm/WasmTarget.java b/core/src/main/java/org/teavm/backend/wasm/WasmTarget.java
@@ -60,11 +61,14 @@ index 64b9e60a..02c24c81 100644
 +}
 END
 mvn clean install
+cd ..
 ```
 
-Then, build and the app:
+Then, clone and build and this app:
 
 ```
+git clone https://github.com/dicej/spin-http-java
+cd spin-http-java
 spin build && spin up
 ```
 
