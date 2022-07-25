@@ -42,7 +42,7 @@ fn main() -> Result<()> {
         ModuleKind::Binary(_) => bail!("binary modules not yet supported"),
     };
 
-    let unreachable = |span, ty, instrs| {
+    let stub = |span, ty, instrs| {
         ModuleField::Func(Func {
             span,
             id: None,
@@ -68,7 +68,7 @@ fn main() -> Result<()> {
                     },
                 ..
             }) => {
-                *field = unreachable(
+                *field = stub(
                     *span,
                     mem::replace(
                         ty,
@@ -91,7 +91,7 @@ fn main() -> Result<()> {
                 *name = "_initialize";
             }
             ModuleField::Start(Index::Num(_, span)) => {
-                *field = unreachable(
+                *field = stub(
                     *span,
                     TypeUse {
                         index: None,
