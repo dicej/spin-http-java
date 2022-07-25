@@ -81,9 +81,9 @@
               <minHeapSize>1</minHeapSize>
               <maxHeapSize>16</maxHeapSize>
               <mainClass>foo.HelloSpin</mainClass>
-              <debugInformationGenerated>false</debugInformationGenerated>
-              <sourceMapsGenerated>false</sourceMapsGenerated>
-              <sourceFilesCopied>false</sourceFilesCopied>
+              <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
+              <sourceFilesCopied>true</sourceFilesCopied>
               <optimizationLevel>FULL</optimizationLevel>
             </configuration>
           </execution>

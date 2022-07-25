@@ -1,3 +1,13 @@
+//! This is a simple utility to post-process the Wasm output of [TeaVM](https://github.com/konsoletyper/teavm) to
+//! make it suitable for use as a [Spin](https://github.com/fermyon/spin) HTTP app.
+//!
+//! It currently does the following:
+//!
+//! - Replace the "teavm" and "teavmHeapTrace" imports with stub functions
+//! - Rename the "start" export to "_initialize"
+//! - Replace the `start` module item with a dummy function to prevent `wasmtime` from calling it
+//! - Modify the `memory` module item to request a minimum number of memory pages which exceeds `org.teavm.backend.wasm.WasmTarget.maxHeapSize`
+
 use {
     anyhow::{bail, Result},
     std::{
@@ -6,11 +16,12 @@ use {
     },
     wast::{
         core::{
-            Expression, Func, FuncKind, Import, InlineExport, Instruction, ItemKind, ItemSig,
-            ModuleField, ModuleKind, TypeUse,
+            Export, Expression, Func, FuncKind, FunctionType, Import, InlineExport, Instruction,
+            ItemKind, ItemSig, Limits, Memory, MemoryKind, MemoryType, ModuleField, ModuleKind,
+            TypeUse,
         },
         parser::{self, ParseBuffer},
-        token::Float64,
+        token::Index,
         Wat,
     },
 };
@@ -31,7 +42,7 @@ fn main() -> Result<()> {
         ModuleKind::Binary(_) => bail!("binary modules not yet supported"),
     };
 
-    let ignore = |span, ty, instrs| {
+    let unreachable = |span, ty, instrs| {
         ModuleField::Func(Func {
             span,
             id: None,
@@ -46,38 +57,64 @@ fn main() -> Result<()> {
     };
 
     for field in fields {
-        if let ModuleField::Import(Import {
-            span,
-            module: "teavm" | "teavmHeapTrace",
-            field: name,
-            item:
-                ItemSig {
-                    kind: ItemKind::Func(ty),
-                    ..
-                },
-            ..
-        }) = field
-        {
-            *field = ignore(
-                *span,
-                mem::replace(
-                    ty,
+        match field {
+            ModuleField::Import(Import {
+                span,
+                module: module @ ("teavm" | "teavmHeapTrace"),
+                item:
+                    ItemSig {
+                        kind: ItemKind::Func(ty),
+                        ..
+                    },
+                ..
+            }) => {
+                *field = unreachable(
+                    *span,
+                    mem::replace(
+                        ty,
+                        TypeUse {
+                            index: None,
+                            inline: None,
+                        },
+                    ),
+                    Box::new([if *module == "teavmHeapTrace" {
+                        Instruction::Return
+                    } else {
+                        Instruction::Unreachable
+                    }]),
+                );
+            }
+            ModuleField::Export(Export {
+                name: name @ "start",
+                ..
+            }) => {
+                *name = "_initialize";
+            }
+            ModuleField::Start(Index::Num(_, span)) => {
+                *field = unreachable(
+                    *span,
                     TypeUse {
                         index: None,
-                        inline: None,
-                    },
-                ),
-                if *name == "currentTimeMillis" {
-                    Box::new([
-                        Instruction::F64Const(Float64 {
-                            bits: 0_f64.to_bits(),
+                        inline: Some(FunctionType {
+                            params: Box::new([]),
+                            results: Box::new([]),
                         }),
-                        Instruction::Return,
-                    ])
-                } else {
-                    Box::new([Instruction::Return])
-                },
-            );
+                    },
+                    Box::new([Instruction::Unreachable]),
+                );
+            }
+            ModuleField::Memory(Memory {
+                kind:
+                    MemoryKind::Normal(MemoryType::B32 {
+                        limits: Limits { min, max },
+                        ..
+                    }),
+                ..
+            }) => {
+                *min = 4096;
+                *max = None;
+            }
+            _ => (),
         }
     }
 
