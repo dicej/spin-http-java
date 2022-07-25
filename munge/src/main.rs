@@ -1,12 +1,8 @@
 //! This is a simple utility to post-process the Wasm output of [TeaVM](https://github.com/konsoletyper/teavm) to
 //! make it suitable for use as a [Spin](https://github.com/fermyon/spin) HTTP app.
 //!
-//! It currently does the following:
-//!
-//! - Replace the "teavm" and "teavmHeapTrace" imports with stub functions
-//! - Rename the "start" export to "_initialize"
-//! - Replace the `start` module item with a dummy function to prevent `wasmtime` from calling it
-//! - Modify the `memory` module item to request a minimum number of memory pages which exceeds `org.teavm.backend.wasm.WasmTarget.maxHeapSize`
+//! It replaces the "teavm" and "teavmHeapTrace" imports with stub functions since Spin won't know how to deal with
+//! them at runtime.
 
 use {
     anyhow::{bail, Result},
@@ -16,12 +12,10 @@ use {
     },
     wast::{
         core::{
-            Export, Expression, Func, FuncKind, FunctionType, Import, InlineExport, Instruction,
-            ItemKind, ItemSig, Limits, Memory, MemoryKind, MemoryType, ModuleField, ModuleKind,
-            TypeUse,
+            Expression, Func, FuncKind, Import, InlineExport, Instruction, ItemKind, ItemSig,
+            ModuleField, ModuleKind, TypeUse,
         },
         parser::{self, ParseBuffer},
-        token::Index,
         Wat,
     },
 };
@@ -83,36 +77,6 @@ fn main() -> Result<()> {
                         Instruction::Unreachable
                     }]),
                 );
-            }
-            ModuleField::Export(Export {
-                name: name @ "start",
-                ..
-            }) => {
-                *name = "_initialize";
-            }
-            ModuleField::Start(Index::Num(_, span)) => {
-                *field = stub(
-                    *span,
-                    TypeUse {
-                        index: None,
-                        inline: Some(FunctionType {
-                            params: Box::new([]),
-                            results: Box::new([]),
-                        }),
-                    },
-                    Box::new([Instruction::Unreachable]),
-                );
-            }
-            ModuleField::Memory(Memory {
-                kind:
-                    MemoryKind::Normal(MemoryType::B32 {
-                        limits: Limits { min, max },
-                        ..
-                    }),
-                ..
-            }) => {
-                *min = 4096;
-                *max = None;
             }
             _ => (),
         }

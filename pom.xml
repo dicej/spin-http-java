@@ -84,7 +84,8 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>
-              <optimizationLevel>FULL</optimizationLevel>
+              <!-- Anything beyond SIMPLE appears to break non-trivial code: -->
+              <optimizationLevel>SIMPLE</optimizationLevel>
             </configuration>
           </execution>
         </executions>

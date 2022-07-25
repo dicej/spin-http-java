@@ -7,12 +7,8 @@ WebAssembly backend to convert Java bytecode to WebAssembly, plus a mix of
 
 ### Status
 
-The minimal "hello, world" app in HelloSpin.java works with the hacks listed
-below.  However, calling non-trivial methods like `String.getBytes()` makes the
-whole thing blow up spectacularly.  I'm not sure how much of that is due to
-TeaVM's incomplete WebAssembly support vs. running it in a non-browser context,
-and I haven't had time yet to investigate thorougly (e.g. by running equivalent
-code in a browser).
+The basic "hello, world" app in HelloSpin.java works with the hacks listed
+below.  I haven't tried anything more ambitious than that yet, though.
 
 ### Building and Running
 
@@ -87,10 +83,6 @@ ABI](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Canonic
 heap space.  See the `git apply` step above for details.
 
 The Wasm post-processing is handled by a small Rust CLI app located in the
-[munge](./munge) directory.  It does a few things to the .wasm file produced by
-TeaVM:
-
-- Replace the "teavm" and "teavmHeapTrace" imports with stub functions
-- Rename the "start" export to "_initialize"
-- Replace the `start` module item with a dummy function to prevent `wasmtime` from calling it
-- Modify the `memory` module item to request a minimum number of memory pages which exceeds `org.teavm.backend.wasm.WasmTarget.maxHeapSize`
+[munge](./munge) directory.  It replaces the "teavm" and "teavmHeapTrace"
+imports with stub functions since Spin won't know how to deal with them at
+runtime.
