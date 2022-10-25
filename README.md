@@ -1,3 +1,5 @@
+# Please note: this repository was an early experiment and is no longer being updated.  Please see [spin-teavm-example](https://github.com/dicej/spin-teavm-example) for a more up-to-date example.
+
 ## Experimental Spin HTTP app written in Java
 
 This uses [TeaVM](https://github.com/konsoletyper/teavm)'s experimental
